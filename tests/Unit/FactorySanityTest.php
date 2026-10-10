@@ -4,6 +4,9 @@ use App\Models\Category;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\ProductBatch;
+use App\Models\StockAdjustment;      // ← tambah
+use App\Models\StockOpname;          // ← tambah
+use App\Models\StockOpnameDetail;    // ← tambah
 use App\Models\StockTransaction;
 use App\Models\StockTransactionDetail;
 use App\Models\Supplier;
@@ -157,4 +160,116 @@ test('StockTransactionDetailFactory otomatis membuat transaksi & produk', functi
 
     expect($detail->transaction)->toBeInstanceOf(StockTransaction::class);
     expect($detail->product)->toBeInstanceOf(Product::class);
+});
+
+// ============================================================
+// BATCH 3 — STOCK OPNAME & ADJUSTMENT
+// ============================================================
+
+test('StockOpnameFactory bisa create SO', function () {
+    $so = StockOpname::factory()->create();
+
+    expect($so->id)->toBeGreaterThan(0);
+    expect($so->code)->toStartWith('SO-');
+    expect($so->status)->toBe(StockOpname::STATUS_COMPLETED);
+    expect($so->user_id)->not->toBeNull();
+});
+
+test('StockOpnameFactory state draft menghasilkan status draft', function () {
+    $so = StockOpname::factory()->draft()->create();
+    expect($so->status)->toBe(StockOpname::STATUS_DRAFT);
+});
+
+test('StockOpnameFactory state at menghasilkan tanggal sesuai', function () {
+    $so = StockOpname::factory()->at('2026-01-15')->create();
+
+    // $so->date adalah Carbon object, jadi bandingkan hasil format-nya
+    expect($so->date->format('Y-m-d'))->toBe('2026-01-15');
+    expect($so->code)->toContain('20260115');
+});
+
+test('StockOpnameFactory accessor status label & badge bekerja', function () {
+    $so = StockOpname::factory()->completed()->create();
+    expect($so->status_label)->toBe('Selesai');
+    expect($so->status_badge)->toContain('Selesai');
+
+    $draft = StockOpname::factory()->draft()->create();
+    expect($draft->status_label)->toBe('Draft');
+});
+
+test('StockOpnameDetailFactory bisa create detail', function () {
+    $detail = StockOpnameDetail::factory()->create();
+
+    expect($detail->id)->toBeGreaterThan(0);
+    expect($detail->stock_opname_id)->not->toBeNull();
+    expect($detail->product_id)->not->toBeNull();
+});
+
+test('StockOpnameDetailFactory state matching menghasilkan selisih 0', function () {
+    $detail = StockOpnameDetail::factory()->matching()->create();
+
+    expect($detail->system_stock)->toBe($detail->physical_stock);
+    expect($detail->difference)->toBe(0);
+    expect($detail->difference_label)->toBe('Sesuai');
+});
+
+test('StockOpnameDetailFactory state shortage menghasilkan selisih negatif', function () {
+    $detail = StockOpnameDetail::factory()->shortage(-7)->create();
+
+    expect($detail->difference)->toBe(-7);
+    expect($detail->difference_label)->toBe('Kurang');
+});
+
+test('StockOpnameDetailFactory state surplus menghasilkan selisih positif', function () {
+    $detail = StockOpnameDetail::factory()->surplus(10)->create();
+
+    expect($detail->difference)->toBe(10);
+    expect($detail->difference_label)->toBe('Lebih');
+});
+
+test('StockOpnameDetailFactory state notCounted menghasilkan fisik null', function () {
+    $detail = StockOpnameDetail::factory()->notCounted()->create();
+    expect($detail->physical_stock)->toBeNull();
+});
+
+test('StockOpnameDetailFactory booted() otomatis hitung difference', function () {
+    // Coba create tanpa set difference → harus dihitung otomatis
+    $detail = StockOpnameDetail::create([
+        'stock_opname_id' => StockOpname::factory()->create()->id,
+        'product_id'      => Product::factory()->create()->id,
+        'system_stock'    => 100,
+        'physical_stock'  => 95,
+        // difference sengaja tidak di-set
+    ]);
+
+    expect($detail->fresh()->difference)->toBe(-5);
+});
+
+test('StockAdjustmentFactory bisa create adjustment', function () {
+    $adj = StockAdjustment::factory()->create();
+
+    expect($adj->id)->toBeGreaterThan(0);
+    expect($adj->code)->toStartWith('ADJ-');
+    expect($adj->adjustment)->toBe(-1);
+    expect($adj->user_id)->not->toBeNull();
+});
+
+test('StockAdjustmentFactory state increase menghasilkan adjustment positif', function () {
+    $adj = StockAdjustment::factory()->increase(10)->create();
+    expect($adj->adjustment)->toBe(10);
+    expect($adj->formatted_adjustment)->toBe('+10');
+});
+
+test('StockAdjustmentFactory state decrease menghasilkan adjustment negatif', function () {
+    $adj = StockAdjustment::factory()->decrease(5)->create();
+    expect($adj->adjustment)->toBe(-5);
+    expect($adj->formatted_adjustment)->toBe('-5');
+});
+
+test('StockAdjustmentFactory state fromOpname mengisi reference', function () {
+    $adj = StockAdjustment::factory()->fromOpname('SO-20261008-001', -5)->create();
+
+    expect($adj->adjustment)->toBe(-5);
+    expect($adj->reason)->toBe('Selisih Stock Opname');
+    expect($adj->reference)->toBe('SO-20261008-001');
 });
