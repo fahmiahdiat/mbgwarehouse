@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            $table->boolean('has_batch')
+                  ->default(false)
+                  ->after('status')
+                  ->comment('Wajib track batch & expired?');
+            $table->index('has_batch');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('products', function (Blueprint $table) {
+            $table->dropIndex(['has_batch']);
+            $table->dropColumn('has_batch');
+        });
+    }
+};
