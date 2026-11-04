@@ -13,23 +13,25 @@ use Illuminate\Http\Request;
 class ProductController extends Controller
 {
     public function index(Request $request)
-    {
-        $items = Product::query()
-            ->with(['category', 'unit', 'location', 'supplier'])
-            ->search($request->search)
-            ->when($request->category, fn ($q) => $q->where('category_id', $request->category))
-            ->when($request->location, fn ($q) => $q->where('location_id', $request->location))
-            ->when($request->status,   fn ($q) => $q->where('status', $request->status))
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
+{
+    $items = Product::query()
+        ->with(['category', 'unit', 'location', 'supplier'])
+        ->search($request->search)
+        ->when($request->category, fn ($q) => $q->where('category_id', $request->category))
+        ->when($request->location, fn ($q) => $q->where('location_id', $request->location))
+        ->when($request->status,   fn ($q) => $q->where('status', $request->status))
+        ->when($request->monitoring === 'monitored',   fn ($q) => $q->monitored())
+        ->when($request->monitoring === 'unmonitored', fn ($q) => $q->unmonitored())
+        ->orderBy('name')
+        ->paginate(20)
+        ->withQueryString();
 
-        return view('master.products.index', [
-            'items'      => $items,
-            'categories' => Category::orderBy('name')->get(),
-            'locations'  => Location::orderBy('name')->get(),
-        ]);
-    }
+    return view('master.products.index', [
+        'items'      => $items,
+        'categories' => Category::orderBy('name')->get(),
+        'locations'  => Location::orderBy('name')->get(),
+    ]);
+}
 
     public function create()
     {

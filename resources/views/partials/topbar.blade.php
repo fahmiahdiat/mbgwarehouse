@@ -4,13 +4,11 @@
             <i class="bi bi-list"></i>
         </button>
 
-        {{-- Logo BGN --}}
         <img src="{{ asset('logo-bgn.png') }}"
-             alt="Logo Badan Gizi Nasional"
+             alt="Logo BGN"
              class="topbar-logo"
              onerror="this.style.display='none'">
 
-        {{-- Nama Instansi --}}
         <div class="topbar-title">
             <strong>Sistem Informasi Manajemen Gudang</strong>
             <small>SPPG Kuningan Jalaksana Maniskidul 3 — Badan Gizi Nasional</small>
@@ -18,13 +16,11 @@
     </div>
 
     <div class="topbar-right">
-        {{-- Tanggal --}}
         <span class="topbar-date">
             <i class="bi bi-calendar3"></i>
-            {{ now()->locale('id')->isoFormat('dddd, D MMMM Y') }}
+            {{ now()->locale('id')->isoFormat('ddd, D MMM Y') }}
         </span>
 
-        {{-- User Dropdown --}}
         <div class="dropdown">
             <button class="btn-user dropdown-toggle" type="button"
                     data-bs-toggle="dropdown" aria-expanded="false">

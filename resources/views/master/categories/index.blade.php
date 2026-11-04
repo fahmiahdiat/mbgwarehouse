@@ -41,6 +41,7 @@
                         <th width="50">#</th>
                         <th>Nama Kategori</th>
                         <th>Deskripsi</th>
+                        <th class="text-center" width="100">Monitoring</th>
                         <th class="text-center" width="120">Jumlah Barang</th>
                         <th class="text-end" width="120">Aksi</th>
                     </tr>
@@ -51,6 +52,13 @@
                             <td class="text-muted">{{ $items->firstItem() + $i }}</td>
                             <td class="fw-semibold">{{ $c->name }}</td>
                             <td class="text-muted">{{ $c->description ?? '—' }}</td>
+                            <td class="text-center">
+                                @if($c->is_monitored)
+                                    <span class="badge bg-success">Aktif</span>
+                                @else
+                                    <span class="badge bg-secondary">Non-aktif</span>
+                                @endif
+                            </td>
                             <td class="text-center">
                                 <span class="badge bg-info">{{ $c->products_count }}</span>
                             </td>

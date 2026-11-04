@@ -122,6 +122,22 @@ public function activeBatches(): HasMany
         return $query->whereColumn('stock', '>', 'min_stock');
     }
 
+    public function scopeMonitored($query)
+{
+    return $query->where(function ($q) {
+        $q->whereDoesntHave('category')
+          ->orWhereHas('category', fn ($c) => $c->where('is_monitored', true));
+    });
+}
+
+/**
+ * Kebalikannya — hanya produk yang tidak dimonitor (bahan segar).
+ */
+public function scopeUnmonitored($query)
+{
+    return $query->whereHas('category', fn ($c) => $c->where('is_monitored', false));
+}
+
     /* ============================================================
      |  ACCESSOR
      |============================================================ */

@@ -13,7 +13,15 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
+        'is_monitored',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_monitored' => 'boolean',
+        ];
+    }
 
     /* ============================================================
      |  RELASI
@@ -34,5 +42,10 @@ class Category extends Model
             $q->where('name', 'like', "%{$keyword}%")
               ->orWhere('description', 'like', "%{$keyword}%")
         );
+    }
+
+    public function scopeMonitored($query)
+    {
+        return $query->where('is_monitored', true);
     }
 }

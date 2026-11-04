@@ -33,6 +33,22 @@
                 @enderror
             </div>
 
+            <div class="mb-3">
+    <label class="form-label">Monitoring</label>
+    <div class="form-check">
+        <input type="checkbox" name="is_monitored" id="is_monitored" value="1"
+               class="form-check-input"
+               @checked(old('is_monitored', $item->is_monitored ?? true))>
+        <label class="form-check-label" for="is_monitored">
+            Pantau stok kategori ini di dashboard & monitoring
+        </label>
+    </div>
+    <small class="text-muted">
+        Hilangkan centang untuk kategori seperti <strong>"Bahan Segar"</strong>
+        yang selalu habis di hari yang sama.
+    </small>
+</div>
+
             <div class="d-flex gap-2">
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-save"></i> Simpan

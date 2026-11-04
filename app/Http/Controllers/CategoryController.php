@@ -30,7 +30,10 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:100|unique:categories,name',
             'description' => 'nullable|string',
+            'is_monitored' => 'nullable|boolean',
         ]);
+
+        $data['is_monitored'] = $request->boolean('is_monitored');
 
         $category = Category::create($data);
 
@@ -54,8 +57,10 @@ class CategoryController extends Controller
         $data = $request->validate([
             'name'        => 'required|string|max:100|unique:categories,name,' . $category->id,
             'description' => 'nullable|string',
+            'is_monitored' => 'nullable|boolean',
         ]);
 
+        $data['is_monitored'] = $request->boolean('is_monitored');
         $category->update($data);
 
         ActivityLog::record(

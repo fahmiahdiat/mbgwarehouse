@@ -13,9 +13,9 @@ class DashboardController extends Controller
     public function index()
     {
         // Statistik kartu atas
-        $totalBarang = Product::active()->count();
-        $stokMenipis = Product::active()->lowStock()->count();
-        $stokHabis   = Product::active()->outOfStock()->count();
+        $totalBarang = Product::active()->monitored()->count();
+        $stokMenipis = Product::active()->monitored()->lowStock()->count();
+        $stokHabis   = Product::active()->monitored()->outOfStock()->count();
 
         // Aktivitas hari ini
         $today = now()->toDateString();
@@ -25,6 +25,7 @@ class DashboardController extends Controller
 
         // Peringatan stok
         $peringatan = Product::active()
+            ->monitored()
             ->whereColumn('stock', '<=', 'min_stock')
             ->orderBy('stock')
             ->limit(10)

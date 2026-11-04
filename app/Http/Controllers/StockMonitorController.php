@@ -15,24 +15,32 @@ class StockMonitorController extends Controller
      * Halaman "Stok Barang".
      */
     public function index(Request $request)
-    {
-        $items = Product::query()
-            ->active()
-            ->with(['category', 'unit', 'location'])
-            ->search($request->search)
-            ->when($request->category, fn ($q) => $q->where('category_id', $request->category))
-            ->when($request->filter === 'aman',    fn ($q) => $q->safeStock())
-            ->when($request->filter === 'menipis', fn ($q) => $q->lowStock())
-            ->when($request->filter === 'habis',   fn ($q) => $q->outOfStock())
-            ->orderBy('name')
-            ->paginate(25)
-            ->withQueryString();
+{
+    // Kalau user centang "tampilkan bahan segar", jangan pakai scope monitored
+    $showAll = $request->boolean('show_all');
 
-        return view('stocks.index', [
-            'items'      => $items,
-            'categories' => Category::orderBy('name')->get(),
-        ]);
+    $query = Product::query()
+        ->active()
+        ->with(['category', 'unit', 'location'])
+        ->search($request->search)
+        ->when($request->category, fn ($q) => $q->where('category_id', $request->category))
+        ->when($request->filter === 'aman',    fn ($q) => $q->safeStock())
+        ->when($request->filter === 'menipis', fn ($q) => $q->lowStock())
+        ->when($request->filter === 'habis',   fn ($q) => $q->outOfStock());
+
+    // Default: hanya yang dimonitor
+    if (! $showAll) {
+        $query->monitored();
     }
+
+    $items = $query->orderBy('name')->paginate(25)->withQueryString();
+
+    return view('stocks.index', [
+        'items'      => $items,
+        'categories' => Category::orderBy('name')->get(),
+        'showAll'    => $showAll,
+    ]);
+}
 
     public function batches(Product $product)
 {

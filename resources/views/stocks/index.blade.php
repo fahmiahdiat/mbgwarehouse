@@ -1,6 +1,7 @@
 @extends('layouts.gudang')
 
 @section('title', 'Stok Barang')
+@section('subtitle', 'Monitoring stok barang yang dipantau')
 
 @section('content')
 
@@ -12,6 +13,11 @@
                 <i class="bi bi-bar-chart-line text-primary"></i>
                 Stok Barang Saat Ini
                 <span class="badge bg-secondary ms-1">{{ $items->total() }}</span>
+                @if(! $showAll)
+                    <span class="badge bg-info ms-1" title="Bahan segar disembunyikan">
+                        <i class="bi bi-filter"></i> Hanya yang dipantau
+                    </span>
+                @endif
             </h6>
         </div>
 
@@ -22,16 +28,21 @@
                        placeholder="Cari nama / kode barang..."
                        value="{{ request('search') }}">
             </div>
+
             <div class="col-md-3">
                 <select name="category" class="form-select form-select-sm">
                     <option value="">— Semua Kategori —</option>
                     @foreach($categories as $c)
                         <option value="{{ $c->id }}" @selected(request('category') == $c->id)>
                             {{ $c->name }}
+                            @if(! $c->is_monitored)
+                                (tidak dipantau)
+                            @endif
                         </option>
                     @endforeach
                 </select>
             </div>
+
             <div class="col-md-3">
                 <select name="filter" class="form-select form-select-sm">
                     <option value="">— Semua Status —</option>
@@ -40,15 +51,32 @@
                     <option value="habis"   @selected(request('filter') == 'habis')>🔴 Habis</option>
                 </select>
             </div>
+
             <div class="col-md-2 d-flex gap-1">
                 <button class="btn btn-primary btn-sm flex-grow-1">
                     <i class="bi bi-funnel"></i> Filter
                 </button>
-                @if(request()->hasAny(['search','category','filter']))
+                @if(request()->hasAny(['search','category','filter','show_all']))
                     <a href="{{ route('stocks.index') }}" class="btn btn-outline-secondary btn-sm">
                         <i class="bi bi-x"></i>
                     </a>
                 @endif
+            </div>
+
+            {{-- TOGGLE TAMPILKAN BAHAN SEGAR --}}
+            <div class="col-12 mt-2">
+                <div class="form-check">
+                    <input type="checkbox"
+                           name="show_all"
+                           id="show_all"
+                           value="1"
+                           class="form-check-input"
+                           {{ $showAll ? 'checked' : '' }}>
+                    <label for="show_all" class="form-check-label small text-muted">
+                        <i class="bi bi-eye"></i>
+                        Tampilkan juga bahan segar (sayur, daging) — tidak dipantau
+                    </label>
+                </div>
             </div>
         </form>
 
@@ -63,7 +91,7 @@
                                 <i class="bi bi-check-circle-fill"></i> Aman
                             </span>
                             <span class="badge bg-success">
-                                {{ \App\Models\Product::active()->safeStock()->count() }}
+                                {{ \App\Models\Product::active()->monitored()->safeStock()->count() }}
                             </span>
                         </div>
                     </div>
@@ -78,7 +106,7 @@
                                 <i class="bi bi-exclamation-triangle-fill"></i> Menipis
                             </span>
                             <span class="badge bg-warning text-dark">
-                                {{ \App\Models\Product::active()->lowStock()->count() }}
+                                {{ \App\Models\Product::active()->monitored()->lowStock()->count() }}
                             </span>
                         </div>
                     </div>
@@ -93,7 +121,7 @@
                                 <i class="bi bi-x-octagon-fill"></i> Habis
                             </span>
                             <span class="badge bg-danger">
-                                {{ \App\Models\Product::active()->outOfStock()->count() }}
+                                {{ \App\Models\Product::active()->monitored()->outOfStock()->count() }}
                             </span>
                         </div>
                     </div>
@@ -113,16 +141,31 @@
                         <th class="text-end" width="80">Min</th>
                         <th width="80">Satuan</th>
                         <th width="110">Status</th>
-                        <th width="80">Lokasi</th>
+                        <th width="100">Lokasi</th>
                         <th class="text-end" width="100">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($items as $p)
-                        <tr>
+                        <tr class="{{ $p->category && ! $p->category->is_monitored ? 'opacity-50' : '' }}">
                             <td><span class="badge bg-dark">{{ $p->code }}</span></td>
-                            <td class="fw-semibold">{{ $p->name }}</td>
-                            <td class="text-muted small">{{ $p->category?->name ?? '—' }}</td>
+                            <td class="fw-semibold">
+                                {{ $p->name }}
+                                @if($p->has_batch)
+                                    <span class="badge bg-info ms-1" style="font-size: 9px;">
+                                        <i class="bi bi-calendar-check"></i> Batch
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="text-muted small">
+                                {{ $p->category?->name ?? '—' }}
+                                @if($p->category && ! $p->category->is_monitored)
+                                    <br>
+                                    <span class="badge bg-secondary" style="font-size: 9px;">
+                                        Tidak Dipantau
+                                    </span>
+                                @endif
+                            </td>
                             <td class="text-end fw-bold">{{ $p->stock }}</td>
                             <td class="text-end text-muted">{{ $p->min_stock }}</td>
                             <td>{{ $p->unit?->symbol ?? '—' }}</td>
